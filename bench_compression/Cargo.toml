@@ -1,5 +1,5 @@
 [package]
-name = "test_core"
+name = "bench_compression"
 version = "0.1.0"
 authors = ["Pascal Chen <pascal.chen@devling.xyz>"]
 edition = "2018"
