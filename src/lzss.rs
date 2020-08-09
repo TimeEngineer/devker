@@ -1,3 +1,20 @@
+//! # LZSS
+//!
+//! ## Examples
+//!
+//! ```
+//! use devker::lzss::{lzss_decode, lzss_encode};
+//!
+//! let v = String::from("Hello world, this is a wonderful world !");
+//! let v_in = v.into_bytes();
+//!
+//! // Encode
+//! let encoded = lzss_encode(&v_in);     
+//! // Decode
+//! let decoded = lzss_decode(&encoded).unwrap();
+//! assert_eq!(v_in, decoded);
+//! ```
+
 // Import.
 use crate::code::Code;
 use std::collections::HashMap;

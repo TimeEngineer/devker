@@ -1,3 +1,7 @@
+//! # Huffman's Coding
+//!
+//! This is used for Deflate/Inflate Algorithm, for the moment it takes only &[Code] as input.
+
 // Imports.
 use crate::code::Code;
 use crate::code::{DISTANCE_TABLE, END_OF_BLOCK, FIXED_LITERAL_BIT_CODE_TABLE, LENGTH_TABLE};

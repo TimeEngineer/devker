@@ -1,3 +1,7 @@
+//! # Code
+//!
+//! This is a Token module for LZSS compression algorithm.
+
 // Constants.
 pub const END_OF_BLOCK: u16 = 256;
 pub const FIXED_LITERAL_BIT_CODE_TABLE: [(std::ops::Range<u16>, u8, u16); 4] = [
