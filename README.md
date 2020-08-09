@@ -1,4 +1,4 @@
-# DevCore
+# DevKer
 
 [![libflate](https://img.shields.io/crates/v/devcore.svg)](https://crates.io/crates/devcore)
 [![Documentation](https://docs.rs/devcore/badge.svg)](https://docs.rs/devcore)
