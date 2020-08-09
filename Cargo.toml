@@ -1,0 +1,11 @@
+[package]
+name = "devcore"
+version = "0.1.0"
+authors = ["Pascal Chen <pascal.chen@devling.xyz>"]
+edition = "2018"
+description = "Rust Core Project"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
