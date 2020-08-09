@@ -29,7 +29,7 @@ Add following lines to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-devcore = "0"
+devker = "0"
 ```
 
 Goal
