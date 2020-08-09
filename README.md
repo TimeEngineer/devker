@@ -1,7 +1,7 @@
 # DevKer
 
-[![libflate](https://img.shields.io/crates/v/devcore.svg)](https://crates.io/crates/devcore)
-[![Documentation](https://docs.rs/devcore/badge.svg)](https://docs.rs/devcore)
+[![devker](https://img.shields.io/crates/v/devker.svg)](https://crates.io/crates/devker)
+[![Documentation](https://docs.rs/devker/badge.svg)](https://docs.rs/devker)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Support
