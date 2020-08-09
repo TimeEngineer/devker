@@ -20,7 +20,7 @@ It has a slightly different architecture but the goal is mainly to learn and imp
 Documentation
 -------------
 
-See [RustDoc Documentation](https://docs.rs/devcore).
+See [RustDoc Documentation](https://docs.rs/devker).
 
 Installation
 ------------
