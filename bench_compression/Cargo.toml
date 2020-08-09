@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 rand = "0.7"
 libflate = "1"
-core = { path = "../../core" }
+devker = { path = "../" }
 
 [[bin]]
 name = "wiki"

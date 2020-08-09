@@ -1,5 +1,5 @@
-use core::huffman::BlockType;
-use core::deflate::{deflate, inflate};
+use devker::huffman::BlockType;
+use devker::deflate::{deflate, inflate};
 use libflate::deflate::{Decoder, EncodeOptions, Encoder};
 use std::io::prelude::*;
 const STEP: usize = 3;
