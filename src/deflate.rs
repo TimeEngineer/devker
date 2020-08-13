@@ -5,7 +5,7 @@
 //! ```
 //! use devker::huffman::BlockType;
 //! use devker::deflate::{deflate, inflate};
-//! 
+//!
 //! let v = String::from("Hello world, this is a wonderful world !");
 //! let v_in = v.into_bytes();
 //!

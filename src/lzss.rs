@@ -9,7 +9,7 @@
 //! let v_in = v.into_bytes();
 //!
 //! // Encode
-//! let encoded = lzss_encode(&v_in);     
+//! let encoded = lzss_encode(&v_in);
 //! // Decode
 //! let decoded = lzss_decode(&encoded).unwrap();
 //! assert_eq!(v_in, decoded);
@@ -38,7 +38,7 @@ impl PrefixTableVec {
     pub fn insert(&mut self, key: usize, value: usize) -> Option<usize> {
         let old = self.0[key];
         self.0[key] = value as isize;
-        if old != -1 {
+        if !old.is_negative() {
             return Some(old as usize);
         }
         None
@@ -61,15 +61,16 @@ impl PrefixTable {
 }
 // Functions.
 pub fn prefix(buf: &[u8]) -> usize {
-    (buf[0] as usize) << 0x10 | (buf[1] as usize) << 0x08 | (buf[2] as usize) << 0x00
+    let mut array = [0; 8];
+    (&mut array[5..8]).copy_from_slice(&buf[0..3]);
+    usize::from_be_bytes(array)
 }
-
 pub fn longest_match(buf: &[u8], i: usize, j: usize) -> usize {
     buf[i..]
         .iter()
-        .take(MAX_LENGTH)
         .zip(&buf[j..])
-        .take_while(|&(x, y)| x == y)
+        .take(MAX_LENGTH)
+        .take_while(|(x, y)| *x == *y)
         .count()
 }
 // Main functions.
@@ -89,12 +90,9 @@ pub fn lzss_encode(v_in: &[u8]) -> Vec<Code> {
             let distance = i - j;
             if distance <= MAX_WINDOW_LENGTH {
                 let length = 3 + longest_match(&v_in, i + 3, j + 3);
+                let length = std::cmp::min(length, end - i + 1);
                 for k in (i..).take(length).skip(1) {
-                    if k >= end {
-                        break;
-                    }
-                    let key = prefix(&v_in[k..]);
-                    prefix_table.insert(key, k);
+                    prefix_table.insert(prefix(&v_in[k..]), k);
                 }
                 i += length;
                 let distance = distance as u16;
@@ -103,10 +101,10 @@ pub fn lzss_encode(v_in: &[u8]) -> Vec<Code> {
                 continue;
             }
         }
-        let x = v_in[i];
-        v_out.push(Code::Literal(x));
+        v_out.push(Code::Literal(v_in[i]));
         i += 1;
     }
+    v_out.reserve(v_in[i..].len());
     for x in &v_in[i..] {
         v_out.push(Code::Literal(*x));
     }
