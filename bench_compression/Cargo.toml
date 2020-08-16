@@ -14,3 +14,7 @@ devker = { path = "../" }
 [[bin]]
 name = "wiki"
 path = "src/wiki.rs"
+
+[[bin]]
+name = "bench"
+path = "src/bench.rs"

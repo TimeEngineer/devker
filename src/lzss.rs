@@ -1,144 +1,128 @@
 //! # LZSS
-//!
-//! ## Examples
-//!
-//! ```
-//! use devker::lzss::{lzss_decode, lzss_encode};
-//!
-//! let v = String::from("Hello world, this is a wonderful world !");
-//! let v_in = v.into_bytes();
-//!
-//! // Encode
-//! let encoded = lzss_encode(&v_in);
-//! // Decode
-//! let decoded = lzss_decode(&encoded).unwrap();
-//! assert_eq!(v_in, decoded);
-//! ```
 
 // Import.
 use crate::code::Code;
-use std::collections::HashMap;
 // Constants.
-pub const MAX_WINDOW_LENGTH: usize = 0x8000;
-pub const MAX_LENGTH: usize = 0xFF;
-pub const ERROR_ENDOFBLOCK: &str = "End Of Block is not supposed to be there.";
-pub const ERROR_POSITION: &str = "One distance is greater than current index.";
+const MAX_WINDOW_LENGTH: usize = 0x8000;
+const MAX_LENGTH: usize = 0x100;
+const ERROR_ENDOFBLOCK: &str = "End Of Block is not supposed to be there.";
+const ERROR_POSITION: &str = "One distance is greater than current index.";
 // Structures.
-pub struct PrefixTableVec(Vec<isize>);
-pub type PrefixTableHash = HashMap<usize, usize>;
-pub enum PrefixTable {
-    Small(PrefixTableHash),
-    Large(PrefixTableVec),
-}
+struct PrefixTable<'a>(&'a mut [i32; 0x10000]);
 // Implementations.
-impl PrefixTableVec {
-    pub fn new() -> Self {
-        Self(vec![-1; 0x1000000])
+impl<'a> PrefixTable<'a> {
+    fn new(array: &'a mut [i32; 0x10000]) -> Self {
+        for x in array.iter_mut() {
+            *x = -1;
+        }
+        Self(array)
     }
-    pub fn insert(&mut self, key: usize, value: usize) -> Option<usize> {
+    fn insert(&mut self, buf: &[u8], value: i32) -> Option<i32> {
+        let key = prefix(buf);
         let old = self.0[key];
-        self.0[key] = value as isize;
+        self.0[key] = value;
         if !old.is_negative() {
-            return Some(old as usize);
+            return Some(old);
         }
         None
     }
-}
-impl PrefixTable {
-    pub fn new(len: usize) -> Self {
-        if len < 0x80000 {
-            Self::Small(HashMap::new())
-        } else {
-            Self::Large(PrefixTableVec::new())
-        }
-    }
-    pub fn insert(&mut self, key: usize, value: usize) -> Option<usize> {
-        match self {
-            Self::Small(hash) => hash.insert(key, value),
-            Self::Large(vec) => vec.insert(key, value),
-        }
+    fn overwrite(&mut self, buf: &[u8], value: i32) {
+        let key = prefix(buf);
+        self.0[key] = value;
     }
 }
 // Functions.
-pub fn prefix(buf: &[u8]) -> usize {
+fn prefix(buf: &[u8]) -> usize {
     let mut array = [0; 8];
-    (&mut array[5..8]).copy_from_slice(&buf[0..3]);
+    (&mut array[6..8]).copy_from_slice(&buf[0..2]);
     usize::from_be_bytes(array)
 }
-pub fn longest_match(buf: &[u8], i: usize, j: usize) -> usize {
-    buf[i..]
+fn longest_match(buf: &[u8], d: usize) -> usize {
+    buf[d..]
         .iter()
-        .zip(&buf[j..])
+        .zip(buf)
         .take(MAX_LENGTH)
         .take_while(|(x, y)| *x == *y)
         .count()
 }
+pub fn extend(buf: &mut Vec<u8>, mut d: usize, mut l: usize) -> Result<(), String> {
+    if buf.len() < d {
+        return Err(ERROR_POSITION.into());
+    }
+    let start = buf.len() - d;
+    buf.reserve(l);
+
+    // Copy bytes fastly
+    while l >= d {
+        unsafe {
+            let len = buf.len();
+            std::ptr::copy_nonoverlapping(buf.get_unchecked(start), buf.get_unchecked_mut(len), d);
+            buf.set_len(len + d);
+        }
+        l -= d;
+        d *= 2;
+    }
+
+    // Copy the last remaining bytes
+    unsafe {
+        let len = buf.len();
+        std::ptr::copy_nonoverlapping(buf.get_unchecked(start), buf.get_unchecked_mut(len), l);
+        buf.set_len(len + l);
+    }
+
+    Ok(())
+}
 // Main functions.
-pub fn lzss_encode(v_in: &[u8]) -> Vec<Code> {
+pub fn lzss_encode(v_in: &[u8], buf: &mut [i32; 0x10000]) -> Vec<Code> {
     // Variable initialization.
-    let v_len = v_in.len();
-    let end = std::cmp::max(3, v_len) - 3;
+    let end = std::cmp::max(3, v_in.len()) - 3;
+    let mut prefix_table = PrefixTable::new(buf);
     let mut v_out = Vec::new();
-    let mut prefix_table = PrefixTable::new(v_len);
     let mut i = 0;
 
     // Algorithm.
     while i < end {
-        let key = prefix(&v_in[i..]);
-        let matched = prefix_table.insert(key, i);
-        if let Some(j) = matched {
+        let matched = prefix_table.insert(&v_in[i..], i as i32);
+        if let Some(j) = matched.map(|j| j as usize) {
             let distance = i - j;
             if distance <= MAX_WINDOW_LENGTH {
-                let length = 3 + longest_match(&v_in, i + 3, j + 3);
-                let length = std::cmp::min(length, end - i + 1);
-                for k in (i..).take(length).skip(1) {
-                    prefix_table.insert(prefix(&v_in[k..]), k);
+                let len = longest_match(&v_in[j + 2..], distance);
+                if len > 0 {
+                    let length = std::cmp::min(len + 2, end - i + 1);
+                    for k in (i..).take(length).skip(1) {
+                        prefix_table.overwrite(&v_in[k..], k as i32);
+                    }
+                    i += length;
+                    let distance = distance as u16;
+                    let length = (length - 3) as u8;
+                    v_out.push(Code::Pointer { distance, length });
+                    continue;
                 }
-                i += length;
-                let distance = distance as u16;
-                let length = (length - 3) as u8;
-                v_out.push(Code::Pointer { distance, length });
-                continue;
             }
         }
         v_out.push(Code::Literal(v_in[i]));
         i += 1;
     }
-    v_out.reserve(v_in[i..].len());
     for x in &v_in[i..] {
         v_out.push(Code::Literal(*x));
     }
     v_out
 }
 
+#[allow(dead_code)]
 pub fn lzss_decode(v_in: &[Code]) -> Result<Vec<u8>, String> {
     // Variable initialization.
     let mut v_out = Vec::new();
-    let mut i = 0;
 
     // Algorithm.
-    for code in v_in {
-        match *code {
+    for &code in v_in {
+        match code {
             Code::EndOfBlock => return Err(ERROR_ENDOFBLOCK.into()),
-            Code::Literal(a) => {
-                v_out.push(a);
-                i += 1;
-            }
+            Code::Literal(a) => v_out.push(a),
             Code::Pointer {
                 distance: d,
                 length: l,
-            } => {
-                let d = d as usize;
-                let l = l as usize + 3;
-                if i < d {
-                    return Err(ERROR_POSITION.into());
-                }
-                let p = i - d;
-                for j in (p..).take(l) {
-                    v_out.push(v_out[j]);
-                }
-                i += l;
-            }
+            } => extend(&mut v_out, d as usize, l as usize + 3)?,
         }
     }
     Ok(v_out)

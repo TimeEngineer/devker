@@ -1,16 +1,8 @@
 //! # Code
-//!
-//! This is a Token module for LZSS compression algorithm.
 
 // Constants.
-pub const END_OF_BLOCK: u16 = 256;
-pub const FIXED_LITERAL_BIT_CODE_TABLE: [(std::ops::Range<u16>, u8, u16); 4] = [
-    (000..144, 8, 0b0_0011_0000),
-    (144..256, 9, 0b1_1001_0000),
-    (256..280, 7, 0b0_0000_0000),
-    (280..288, 8, 0b0_1100_0000),
-];
-pub const LENGTH_TABLE: [(u8, u8); 29] = [
+pub(crate) const END_OF_BLOCK: u16 = 256;
+pub(crate) const LENGTH_TABLE: [(u8, u8); 29] = [
     (0, 0),
     (1, 0),
     (2, 0),
@@ -41,7 +33,7 @@ pub const LENGTH_TABLE: [(u8, u8); 29] = [
     (224, 5),
     (255, 0),
 ];
-pub const DISTANCE_TABLE: [(u16, u8); 30] = [
+pub(crate) const DISTANCE_TABLE: [(u16, u8); 30] = [
     (1, 0),
     (2, 0),
     (3, 0),

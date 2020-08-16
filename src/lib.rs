@@ -1,12 +1,19 @@
 //! # Support
 //!
 //! * Deflate/Inflate: [`deflate`]
-//! * LZSS: [`lzss`]
 //!
 //! [`deflate`]: deflate/index.html
-//! [`lzss`]: lzss/index.html
 
-pub mod code;
+pub mod prelude {
+    pub use crate::btype::BlockType;
+    pub use crate::cache::Cache;
+    pub use crate::deflate::{deflate, inflate};
+}
+
+mod bits;
+pub mod btype;
+pub mod cache;
+mod code;
 pub mod deflate;
-pub mod huffman;
-pub mod lzss;
+mod huffman;
+mod lzss;

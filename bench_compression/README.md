@@ -12,24 +12,39 @@ wiki
 ----
 
 ```bash
-$ cd core/bench_compression/
+$ cd devker/bench_compression/
 $ curl -O https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-all-titles-in-ns0.gz
 $ gzip -d enwiki-latest-all-titles-in-ns0.gz
 
 $ cargo run --release --bin wiki
 
 libflate
-time: 6.711064413 s - deflate - size: 116943701
-time: 1.537833225 s - inflate - size: 329839116
-time: 6.588826391 s - deflate - size: 116943701
-time: 1.536978554 s - inflate - size: 329839116
-time: 6.595836837 s - deflate - size: 116943701
-time: 1.538615950 s - inflate - size: 329839116
-core
-time: 2.540604854 s - deflate - size: 116730274
-time: 2.459512773 s - inflate - size: 329839116
-time: 2.543647852 s - deflate - size: 116730274
-time: 2.476856540 s - inflate - size: 329839116
-time: 2.535002666 s - deflate - size: 116730274
-time: 2.483141591 s - inflate - size: 329839116
+time: 6.481724966 s - size: 116943701 - deflate 
+time: 1.461838843 s - size: 329839116 - inflate
+time: 6.385758042 s - size: 116943701 - deflate 
+time: 1.459047555 s - size: 329839116 - inflate
+time: 6.387020922 s - size: 116943701 - deflate 
+time: 1.471621869 s - size: 329839116 - inflate
+devker
+time: 2.079220781 s - size: 125813886 - deflate
+time: 1.390934409 s - size: 329839116 - inflate
+time: 2.087242892 s - size: 125813886 - deflate
+time: 1.396040085 s - size: 329839116 - inflate
+time: 2.086336990 s - size: 125813886 - deflate
+time: 1.390870687 s - size: 329839116 - inflate
 ```
+
+bench
+-----
+
+```bash
+$ cd devker/bench_compression/
+
+$ cargo run --release --bin bench
+
+$ python3 plot.py
+```
+
+![alt text](https://github.com/TimeEngineer/devker/blob/master/bench_compression/bench/bench.png "bench")
+![alt text](https://github.com/TimeEngineer/devker/blob/master/bench_compression/bench/deflate.png "deflate")
+![alt text](https://github.com/TimeEngineer/devker/blob/master/bench_compression/bench/inflate.png "inflate")
