@@ -1,4 +1,4 @@
-# DevKer
+# DevKER
 
 [![devker](https://img.shields.io/crates/v/devker.svg)](https://crates.io/crates/devker)
 [![Documentation](https://docs.rs/devker/badge.svg)](https://docs.rs/devker)
