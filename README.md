@@ -50,7 +50,7 @@ assert_eq!(v_in, decoded);
 Support
 -------
 
-- Deflate/Inflate
+- Deflate/Inflate (Only fixed is supported for deflate)
 
 Note
 ----

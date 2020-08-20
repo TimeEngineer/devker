@@ -1,6 +1,6 @@
 [package]
 name = "devker"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Pascal Chen <pascal.chen@devling.xyz>"]
 edition = "2018"
 description = "Rust Core Project"

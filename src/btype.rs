@@ -1,4 +1,9 @@
 //! # BlockType
+//!
+//! Help to determine which block is used for Huffman's coding.
+//! - Raw = 0b00
+//! - Fixed = 0b01
+//! - Dynamic = 0b10
 
 // Structures.
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -354,7 +354,7 @@ impl<'a> HuffmanDecoder<'a> {
     }
 }
 // Functions.
-pub fn extend_to(buf: &mut [u8], mut pos: usize, mut d: usize, mut l: usize) -> Result<(), String> {
+fn extend_to(buf: &mut [u8], mut pos: usize, mut d: usize, mut l: usize) -> Result<(), String> {
     if pos < d {
         return Err(ERROR_POSITION.into());
     }
