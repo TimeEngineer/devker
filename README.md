@@ -51,6 +51,7 @@ Support
 -------
 
 - Deflate/Inflate (Only fixed is supported for deflate)
+- Zlib (Dictionaries isn't supported)
 
 Note
 ----
@@ -82,4 +83,5 @@ The goal is to have performance and no dependency, in order to fully control the
 References
 ----------
 
+- ZLIB: [RFC-1950](https://tools.ietf.org/html/rfc1950)
 - DEFLATE: [RFC-1951](https://tools.ietf.org/html/rfc1951)

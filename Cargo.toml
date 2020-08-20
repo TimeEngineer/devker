@@ -1,13 +1,13 @@
 [package]
 name = "devker"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Pascal Chen <pascal.chen@devling.xyz>"]
 edition = "2018"
 description = "Rust Core Project"
 repository = "https://github.com/TimeEngineer/DevKer"
 documentation = "https://docs.rs/devker"
 readme = "README.md"
-keywords = ["deflate"]
+keywords = ["deflate", "zlib"]
 categories = ["compression"]
 license = "MIT"
 
