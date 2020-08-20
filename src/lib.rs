@@ -7,7 +7,7 @@
 pub mod prelude {
     pub use crate::btype::BlockType;
     pub use crate::cache::Cache;
-    pub use crate::deflate::{deflate, inflate};
+    pub use crate::deflate::{deflate, inflate, inflate_to};
 }
 
 mod bits;

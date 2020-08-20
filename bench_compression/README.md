@@ -19,19 +19,22 @@ $ gzip -d enwiki-latest-all-titles-in-ns0.gz
 $ cargo run --release --bin wiki
 
 libflate
-time: 6.481724966 s - size: 116943701 - deflate 
-time: 1.461838843 s - size: 329839116 - inflate
-time: 6.385758042 s - size: 116943701 - deflate 
-time: 1.459047555 s - size: 329839116 - inflate
-time: 6.387020922 s - size: 116943701 - deflate 
-time: 1.471621869 s - size: 329839116 - inflate
+time: 6.375271453 s - size: 116943701 - deflate 
+time: 1.507718897 s - size: 329839116 - inflate
+time: 6.367969073 s - size: 116943701 - deflate 
+time: 1.509135068 s - size: 329839116 - inflate
+time: 6.371911262 s - size: 116943701 - deflate 
+time: 1.508372329 s - size: 329839116 - inflate
 devker
-time: 2.079220781 s - size: 125813886 - deflate
-time: 1.390934409 s - size: 329839116 - inflate
-time: 2.087242892 s - size: 125813886 - deflate
-time: 1.396040085 s - size: 329839116 - inflate
-time: 2.086336990 s - size: 125813886 - deflate
-time: 1.390870687 s - size: 329839116 - inflate
+time: 2.109853021 s - size: 125813886 - deflate
+time: 1.504122062 s - size: 329839116 - inflate
+time: 1.502997270 s - size: 329839116 - inflate_to
+time: 2.108059192 s - size: 125813886 - deflate
+time: 1.508975561 s - size: 329839116 - inflate
+time: 1.505576031 s - size: 329839116 - inflate_to
+time: 2.108160049 s - size: 125813886 - deflate
+time: 1.507358968 s - size: 329839116 - inflate
+time: 1.503677668 s - size: 329839116 - inflate_to
 ```
 
 bench

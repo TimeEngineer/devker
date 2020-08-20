@@ -1,4 +1,4 @@
-use devker::prelude::{deflate, inflate, BlockType, Cache};
+use devker::prelude::{deflate, inflate, inflate_to, BlockType, Cache};
 use libflate::deflate::{Decoder, EncodeOptions, Encoder};
 use std::io::prelude::*;
 const NTIME: usize = 3;
@@ -18,9 +18,9 @@ fn block0(v_in: &[u8]) {
         encoded.len()
     );
 
+    let mut decoded = Vec::with_capacity(v_in.len());
     let now = std::time::Instant::now();
     let mut decoder = Decoder::new(&encoded[..]);
-    let mut decoded = Vec::new();
     decoder.read_to_end(&mut decoded).unwrap();
     let sec = now.elapsed().as_secs();
     let subsec = now.elapsed().subsec_nanos();
@@ -30,7 +30,6 @@ fn block0(v_in: &[u8]) {
         subsec,
         decoded.len()
     );
-
     assert_eq!(v_in, &decoded[..]);
 }
 
@@ -56,7 +55,19 @@ fn block1(v_in: &[u8], cache: &mut Cache) {
         subsec,
         decoded.len()
     );
+    assert_eq!(v_in, &decoded[..]);
 
+    let mut decoded = vec![0; v_in.len()];
+    let now = std::time::Instant::now();
+    inflate_to(&encoded, cache, &mut decoded).unwrap();
+    let sec = now.elapsed().as_secs();
+    let subsec = now.elapsed().subsec_nanos();
+    println!(
+        "time: {}.{:09} s - size: {} - inflate_to",
+        sec,
+        subsec,
+        decoded.len()
+    );
     assert_eq!(v_in, &decoded[..]);
 }
 

@@ -53,6 +53,7 @@ use crate::prelude::{BlockType, Cache};
 const ERROR_BUFFER: &str = "Buffer overflow.";
 const ERROR_COMPLEMENT: &str = "LEN is not the one's complement of NLEN.";
 const ERROR_LENGTH: &str = "Invalid length.";
+const ERROR_POSITION: &str = "One distance is greater than current index.";
 const ERROR_PREVIOUS: &str = "No previous value.";
 const ERROR_RESERVED: &str = "Reserved btype.";
 const ERROR_VALUE: &str = "Invalid value decoded.";
@@ -148,7 +149,6 @@ impl<'a> Reader<'a> {
         Ok(())
     }
     fn load_widthes(&mut self, code: u16, last: Option<u8>) -> Result<Box<IterU8>, String> {
-        self.check_last_error()?;
         Ok(match code {
             0..=15 => Box::new(std::iter::once(code as u8)),
             16 => {
@@ -170,16 +170,22 @@ impl<'a> Reader<'a> {
             _ => return Err(ERROR_WIDTHES.into()),
         })
     }
-    fn fill(&mut self, v_out: &mut Vec<u8>, len: usize) -> Result<(), String> {
-        self.check_last_error()?;
+    fn fill(&mut self, v_out: &mut Vec<u8>, len: usize) {
         if self.v_in.len() < len {
-            return Err(ERROR_BUFFER.into());
+            self.last_error = Some(ERROR_BUFFER);
+            return;
         }
         v_out.reserve(len);
         let mut array = vec![0; len];
         (&mut array).copy_from_slice(&self.v_in[..len]);
         v_out.extend(array);
-        Ok(())
+    }
+    fn fill_to(&mut self, v_out: &mut [u8], pos: usize, len: usize) {
+        if self.v_in.len() < len || v_out.len() < pos + len {
+            self.last_error = Some(ERROR_BUFFER);
+            return;
+        }
+        (&mut v_out[pos..pos + len]).copy_from_slice(&self.v_in[..len]);
     }
 }
 impl<'a> HuffmanDecoder<'a> {
@@ -310,25 +316,25 @@ impl<'a> HuffmanDecoder<'a> {
         }
         eob_width
     }
-    fn decode(&self, reader: &mut Reader) -> Result<Code, String> {
+    fn decode(&self, reader: &mut Reader) -> Code {
         let code = reader.peek_bits(self.eob_width);
         let mut bits = Bits::from(self.literal[code as usize]);
         if bits.width > self.eob_width {
             let code = reader.peek_bits(self.max_lwidth);
             bits = Bits::from(self.literal[code as usize]);
             if bits.width > self.max_lwidth {
-                return Err(ERROR_WIDTH.into());
+                reader.last_error = Some(ERROR_WIDTH);
+                return Code::EndOfBlock;
             }
         }
         reader.skip_bits(bits.width);
-        reader.check_last_error()?;
 
-        Ok(match bits.data {
+        match bits.data {
             0..=255 => Code::Literal(bits.data as u8),
             256 => Code::EndOfBlock,
-            length_code @ 257..=285 => {
-                let (code_base_length, width_length) = LENGTH_TABLE[length_code as usize - 257];
-                let bits_length = reader.read_bits(width_length);
+            257..=285 => {
+                let (code_base_length, width_length) = LENGTH_TABLE[bits.data as usize - 257];
+                let bits_length = reader.read_bits(width_length) as u8;
 
                 let code = reader.get_code(self.distance, self.max_dwidth);
 
@@ -336,13 +342,40 @@ impl<'a> HuffmanDecoder<'a> {
                 let bits_distance = reader.read_bits(width_distance);
 
                 Code::Pointer {
-                    length: code_base_length + bits_length as u8,
+                    length: code_base_length + bits_length,
                     distance: code_base_distance + bits_distance,
                 }
             }
-            _ => return Err(ERROR_VALUE.into()),
-        })
+            _ => {
+                reader.last_error = Some(ERROR_VALUE);
+                Code::EndOfBlock
+            }
+        }
     }
+}
+// Functions.
+pub fn extend_to(buf: &mut [u8], mut pos: usize, mut d: usize, mut l: usize) -> Result<(), String> {
+    if pos < d {
+        return Err(ERROR_POSITION.into());
+    }
+    if buf.len() < pos + l {
+        return Err(ERROR_BUFFER.into());
+    }
+    let start = pos - d;
+
+    // Copy bytes fastly
+    while l >= d {
+        let (left, right) = (&mut buf[start..pos + d]).split_at_mut(d);
+        right.copy_from_slice(left);
+        pos += d;
+        l -= d;
+        d *= 2;
+    }
+
+    // Copy the last remaining bytes
+    let (left, right) = (&mut buf[start..pos + l]).split_at_mut(d);
+    right.copy_from_slice(&left[..l]);
+    Ok(())
 }
 // Main functions.
 pub fn deflate(v_in: &[u8], btype: BlockType, cache: &mut Cache) -> Vec<u8> {
@@ -375,12 +408,13 @@ pub fn inflate(v_in: &[u8], cache: &mut Cache) -> Result<Vec<u8>, String> {
                 if !len != nlen {
                     return Err(ERROR_COMPLEMENT.into());
                 }
-                reader.fill(&mut v_out, len as usize)?;
+                reader.fill(&mut v_out, len as usize);
             }
             btype => {
                 let decoder = HuffmanDecoder::new(BlockType::from(btype), &mut reader, buf)?;
+                reader.check_last_error()?;
                 loop {
-                    let x = decoder.decode(&mut reader)?;
+                    let x = decoder.decode(&mut reader);
                     match x {
                         Code::EndOfBlock => break,
                         Code::Literal(a) => v_out.push(a),
@@ -393,5 +427,61 @@ pub fn inflate(v_in: &[u8], cache: &mut Cache) -> Result<Vec<u8>, String> {
             }
         }
     }
+    reader.check_last_error()?;
     Ok(v_out)
+}
+
+pub fn inflate_to(v_in: &[u8], cache: &mut Cache, v_out: &mut [u8]) -> Result<(), String> {
+    // Variable Initialization.
+    let buf = cache.inner_mut();
+    let mut reader = Reader::new(v_in);
+    let mut bfinal = 0;
+    let mut i = 0;
+
+    // Algorithms.
+    while bfinal == 0 {
+        bfinal = reader.read_bits(1);
+        let btype = reader.read_bits(2);
+        reader.check_last_error()?;
+        match btype {
+            0b11 => return Err(ERROR_RESERVED.into()),
+            0b00 => {
+                reader.reset();
+                let len = reader.read_u16();
+                let nlen = reader.read_u16();
+                if !len != nlen {
+                    return Err(ERROR_COMPLEMENT.into());
+                }
+                let len = len as usize;
+                reader.fill_to(v_out, i, len);
+                i += len;
+            }
+            btype => {
+                let decoder = HuffmanDecoder::new(BlockType::from(btype), &mut reader, buf)?;
+                reader.check_last_error()?;
+                loop {
+                    let x = decoder.decode(&mut reader);
+                    match x {
+                        Code::EndOfBlock => break,
+                        Code::Literal(a) => {
+                            if i >= v_out.len() {
+                                return Err(ERROR_BUFFER.into());
+                            }
+                            v_out[i] = a;
+                            i += 1;
+                        }
+                        Code::Pointer {
+                            distance: d,
+                            length: l,
+                        } => {
+                            let l = l as usize + 3;
+                            extend_to(v_out, i, d as usize, l)?;
+                            i += l;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    reader.check_last_error()
 }
