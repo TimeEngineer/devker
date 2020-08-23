@@ -87,8 +87,8 @@ pub fn lzss_encode(v_in: &[u8], buf: &mut [i32; 0x10000]) -> Vec<Code> {
             let distance = i - j;
             if distance <= MAX_WINDOW_LENGTH {
                 let len = longest_match(&v_in[j + 2..], distance);
-                if len > 0 {
-                    let length = std::cmp::min(len + 2, end - i + 1);
+                let length = std::cmp::min(len + 2, end + 1 - i);
+                if len > 2 {
                     for k in (i..).take(length).skip(1) {
                         prefix_table.overwrite(&v_in[k..], k as i32);
                     }
